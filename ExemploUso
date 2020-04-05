@@ -1,0 +1,56 @@
+uses System.SysUtils, Xml.XMLDoc, Xml.xmldom, Xml.XMLIntf, U_ConectorSOAP;
+
+function TFabricante.Listar: Boolean;
+var
+  I : integer;
+  Conector : TConectorRakuten;
+  XRet : TXMLDocument;
+  LR , LR2  : IXMLNode;
+begin
+  Result := False;
+  Conector := TConectorRakuten.Create;
+  XRet := TXMLDocument.Create(nil);
+  try
+    Conector.SoapAction := 'http://www.ikeda.com.br/Listar';
+    Conector.URL        := EnderecoLoja+'/ikcwebservice/fabricante.asmx';
+    Conector.XmlEnvio := '<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:iked="http://www.ikeda.com.br">'+
+                           '<soap:Header>'+
+                              '<iked:clsSoapHeader>'+
+                                 '<iked:A1>'+Rakuten_A1+'</iked:A1>'+
+                                 '<iked:A2>'+Rakuten_A2+'</iked:A2>'+
+                              '</iked:clsSoapHeader>'+
+                           '</soap:Header>'+
+                           '<soap:Body>'+
+                              '<iked:Listar>'+
+                                 '<iked:LojaCodigo>'+IntToStr(FLojaCodigo)+'</iked:LojaCodigo>'+
+                                 '<iked:CodigoInternoFabricante>'+FCodigoInternoFabricante+'</iked:CodigoInternoFabricante>'+
+                             '</iked:Listar>'+
+                            '</soap:Body>'+
+                          '</soap:Envelope>';
+
+    if Conector.ConsumirWebService then
+      begin
+        Result := True;
+        XmlRet := Conector.XmlRetorno;
+        XRet.LoadFromXML(Conector.XmlRetorno);
+        XRet.Active := True;
+
+        try
+          LR := XRet.DocumentElement.ChildNodes[0];
+        except
+          XRet.LoadFromXML(Conector.XmlRetorno);
+          XRet.Active := True;
+          LR := XRet.ChildNodes[1];
+        end;
+        NomeFabricante := LR.XML;
+        LR2 := LR.ChildNodes[0].ChildNodes[0].ChildNodes[4].ChildNodes[0].ChildNodes[0].ChildNodes[0];
+        NomeFabricante := LR2.XML;
+        NomeFabricante   := LR.ChildNodes[0].ChildNodes[0].ChildNodes[4].ChildNodes[0].ChildNodes[3].ChildNodes[0].Text;
+      end
+    else
+      Erro := Conector.Erro;
+
+  finally
+    FreeAndNil(Conector);
+  end;
+end;
